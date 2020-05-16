@@ -1,4 +1,4 @@
-package io;
+package lab1.io;
 
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils;

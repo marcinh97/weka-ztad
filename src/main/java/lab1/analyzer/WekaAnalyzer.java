@@ -1,4 +1,4 @@
-package analyzer;
+package lab1.analyzer;
 
 import weka.core.Instances;
 import weka.filters.Filter;
