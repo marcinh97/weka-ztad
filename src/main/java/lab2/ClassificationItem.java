@@ -2,10 +2,12 @@ package lab2;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.ToString;
 
 @AllArgsConstructor
 @Getter
+@ToString
 public class ClassificationItem {
-    private double value;
+    private String value;
     private String givenClass;
 }

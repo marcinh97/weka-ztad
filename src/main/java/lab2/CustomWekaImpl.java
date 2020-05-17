@@ -14,40 +14,32 @@ class CustomWekaImpl {
         this.logBase = logBase;
     }
 
-    double gainRatioAttributeEval(String className) {
-        System.out.println("AAAA");
+    double gainRatioAttributeEval() {
         double entrAttr = countEntropyAttribute();
         if (entrAttr == 0) return 0;
-        double entrClass = countEntropyClass(className);
+        double entrClass = countEntropyClass();
         double entrCond = countEntropyConditional();
-
-        System.out.println("H(CLASS):");
-        System.out.println(entrClass);
-        System.out.println("H(Attr):");
-        System.out.println(entrAttr);
-        System.out.println("H(Class|Attr)");
-        System.out.println(entrCond);
-
         return (entrClass - entrCond) / entrAttr;
     }
 
-    List<Double> getMembersOfClass(String className) {
-        return dataset.stream()
-                .filter(item -> className.equals(item.getGivenClass()))
-                .mapToDouble(ClassificationItem::getValue)
-                .boxed()
-                .collect(Collectors.toList());
-    }
 
-    List<Double> getValuesOfAttribute() {
-        return dataset.stream()
+    List<String> getValuesOfAttribute() {
+        List<String> vals = dataset.stream()
                 .map(ClassificationItem::getValue)
                 .collect(Collectors.toList());
+        vals.forEach(System.out::println);
+        return vals;
     }
 
-    Map<Double, List<String>> getBatches() {
-        List<Double> keys = dataset.stream().mapToDouble(ClassificationItem::getValue).distinct().boxed().collect(Collectors.toList());
-        Map<Double, List<String>> map = new HashMap<>();
+    List<String> getClassesOfAttribute() {
+        return dataset.stream()
+                .map(ClassificationItem::getGivenClass)
+                .collect(Collectors.toList());
+    }
+
+    Map<String, List<String>> getBatches() {
+        List<String> keys = dataset.stream().map(ClassificationItem::getValue).distinct().collect(Collectors.toList());
+        Map<String, List<String>> map = new HashMap<>();
         keys.forEach(key -> {
             List<String> vals = dataset.stream().filter(item -> key.equals(item.getValue())).map(ClassificationItem::getGivenClass).collect(Collectors.toList());
             map.put(key, vals);
@@ -55,18 +47,17 @@ class CustomWekaImpl {
         return map;
     }
 
-    double countEntropyClass(String className) {
-        return new EntropyUtils<>(getMembersOfClass(className)).countEntropy();
+    double countEntropyClass() {
+        return new EntropyUtils<>(getClassesOfAttribute()).countEntropy();
     }
 
     double countEntropyAttribute() {
         return new EntropyUtils<>(getValuesOfAttribute()).countEntropy();
     }
 
-    // https://stackoverflow.com/questions/33982943/how-the-selection-happens-in-infogainattributeeval-in-weka-feature-selection
     double countEntropyConditional() {
         int size = dataset.size();
-        Map<Double, List<String>> batches = getBatches();
+        Map<String, List<String>> batches = getBatches();
         List<Double> entropies = new ArrayList<>();
 
         batches.forEach((key, vals) -> {
@@ -91,6 +82,7 @@ class CustomWekaImpl {
             this(values, Math.E);
         }
 
+
         EntropyUtils(List<T> values, double logBase) {
             this.values = values;
             this.logBase = logBase;
@@ -103,17 +95,22 @@ class CustomWekaImpl {
 
         private double getSingleEntropy(T value) {
             double probab = getProbability(value);
-            return probab * logn(probab, logBase);
+            return probab * logn(0.5, probab);
         }
 
         private double getProbability(T value) {
             int size = values.size();
             if (size == 0) return 0;
-            int valueOccurences = (int) (values.stream().filter(d -> d.equals(value)).count());
-            return (double)valueOccurences/size;
+            int valueOccurrences = (int) (values.stream().filter(d -> d.equals(value)).count());
+            return (double)valueOccurrences/size;
         }
-        private static double logn( double a, double n ) {
-            return Math.log(a) / Math.log(n);
+
+        private static double logn(double base, double value){
+            return Math.log(value)/Math.log(base);
+        }
+
+        public static void main(String[] args) {
+
         }
     }
 }
