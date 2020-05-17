@@ -7,7 +7,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @Getter
 @ToString
-public class ClassificationItem {
-    private String value;
+public class ClassificationItem<T> {
+    private T value;
     private String givenClass;
 }
