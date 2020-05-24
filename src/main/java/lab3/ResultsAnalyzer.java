@@ -2,8 +2,10 @@ package lab3;
 
 import static lab3.Validator.ValidationResult;
 import lab1.io.WekaReader;
+import weka.classifiers.AbstractClassifier;
 import weka.classifiers.Classifier;
 import weka.classifiers.bayes.NaiveBayes;
+import weka.classifiers.functions.MultilayerPerceptron;
 import weka.classifiers.functions.SMO;
 import weka.classifiers.rules.JRip;
 import weka.classifiers.rules.ZeroR;
@@ -59,7 +61,6 @@ public class ResultsAnalyzer {
         return String.format("%s: GMean: %.4f, AUC: %.4f", classificatorName, res.getGmean(), res.getAuc());
     }
 
-
     private ValidationResult testJrip(int folds, String paramName, String param) throws Exception {
         JRip classifier = new JRip();
         classifier.setOptions(new String[]{paramName, param});
@@ -81,34 +82,68 @@ public class ResultsAnalyzer {
         return validator.validateClassifier(testRepetitions);
     }
 
-    public static void main(String[] args) {
-        WekaReader reader = new WekaReader(toArffFile("237982L4_1"));
+    private ValidationResult testClassifier(AbstractClassifier classifier, int folds, String paramName, String param)
+            throws Exception {
+        classifier.setOptions(new String[]{paramName, param});
+        Validator validator = new Validator(dataset, classifier, folds, POSITIVE_VALUE_LABEL);
+        return validator.validateClassifier(testRepetitions);
+    }
+
+    private void getSummaryForClassifiers(int folds) throws Exception {
+        ValidationResult res = new Validator(dataset, new ZeroR(), folds, POSITIVE_VALUE_LABEL).validateClassifier(testRepetitions);
+        System.out.println(getShortSummary(res, "ZeroR"));
+        System.out.println();
+
+        String[] params = new String[]{"0.1", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "20"};
+        System.out.println("Parametr -N (minimal weights of instances within a split) ");
+        for (String param : params) {
+            System.out.println(getShortSummary(testClassifier(new JRip(), folds, "-N", param), "JRip " + param));
+        }
+        params = new String[]{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "20"};
+        System.out.println("Parametr -O (number of runs of optimizations) ");
+        for (String param : params) {
+            System.out.println(getShortSummary(testClassifier(new JRip(), folds, "-O", param), "JRip " + param));
+        }
+
+        System.out.println();
+        System.out.println("Parametr -C (confidence threshold for pruning) ");
+        params = new String[]{"0.01", "0.05", "0.1", "0.25", "0.5"};
+        System.out.println("Parametr -C (confidence threshold for pruning) ");
+        for (String param : params) {
+            System.out.println(getShortSummary(testClassifier(new J48(), folds, "-C", param), "J48 " + param));
+        }
+
+        System.out.println();
+        params = new String[]{"0.1", "0.2", "0.3", "0.4", "0.5", "1", "2", "3", "4", "5", "10"};
+        System.out.println("Parametr -C ");
+        for (String param : params) {
+            System.out.println(getShortSummary(testSMO(folds, "-C", param), "SMO " + param));
+        }
+
+        System.out.println();
+        params = new String[]{"0.01", "0.1", "0.2", "0.3", "0.5", "0.75"};
+        System.out.println("Parametr -L (learning rate) ");
+        for (String param : params) {
+            System.out.println(getShortSummary(testClassifier(new MultilayerPerceptron(), folds,
+                    "-L", param), "MultilayerPerceptron " + param));
+        }
+
+        System.out.println();
+
+        ValidationResult bayesResult = new Validator(dataset, new NaiveBayes(), folds, POSITIVE_VALUE_LABEL).validateClassifier(testRepetitions);
+        System.out.println(getShortSummary(bayesResult, "NaiveBayes"));
+    }
+
+
+        public static void main(String[] args) {
+//        WekaReader reader = new WekaReader(toArffFile("237982L4_1"));
+        WekaReader reader = new WekaReader(toArffFile("238454L4 1"));
         int folds = 10;
-        int tests = 10;
+        int tests = 2;
         try {
             Instances dataset = reader.getData();
             ResultsAnalyzer resultsAnalyzer = new ResultsAnalyzer(dataset, tests);
-            String[] paramsN = new String[]{"0.1", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "20"};
-            String[] paramsO = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "20"};
-//            System.out.println("Parametr -N (minimal weights of instances within a split) ");
-//            for (String param : paramsN) {
-//                System.out.println(getShortSummary(resultsAnalyzer.testJrip(folds, "-N", param), "JRip "+param));
-//            }
-//            System.out.println("Parametr -O (number of runs of optimizations) ");
-//            for (String param : paramsO) {
-//                System.out.println(getShortSummary(resultsAnalyzer.testJrip(folds, "-O", param), "JRip "+param));
-//            }
-//            String[] paramsC = {"0.01", "0.05", "0.1", "0.25", "0.5"};
-//            System.out.println("Parametr -C (confidence threshold for pruning) ");
-//            for (String param : paramsC) {
-//                System.out.println(getShortSummary(resultsAnalyzer.testJ48(folds, "-C", param), "J48 " + param));
-//            }
-
-            String[] paramsSMO = {"0.00001", "0.0001", "0.001", "0.01", "0.1", "0.2", "0.5"};
-            System.out.println("Parametr -C (complexity constant C) ");
-            for (String param : paramsSMO) {
-                System.out.println(getShortSummary(resultsAnalyzer.testSMO(folds, "-L", param), "SMO " + param));
-            }
+            resultsAnalyzer.getSummaryForClassifiers(folds);
 
         } catch (Exception e) {
             e.printStackTrace();
