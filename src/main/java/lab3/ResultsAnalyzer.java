@@ -134,16 +134,41 @@ public class ResultsAnalyzer {
         System.out.println(getShortSummary(bayesResult, "NaiveBayes"));
     }
 
+    private void testForGivenParams(int folds) throws Exception {
+        System.out.println();
+        System.out.println("Testing all classifiers for " + folds + " folds.");
+        ValidationResult res = new Validator(dataset, new ZeroR(), folds, POSITIVE_VALUE_LABEL).validateClassifier(testRepetitions);
+        System.out.println(getShortSummary(res, "ZeroR"));
+
+        String param = "1";
+        System.out.println(getShortSummary(testClassifier(new JRip(), folds, "-N", param), "JRip "+param));
+
+        param = "0.5";
+        System.out.println(getShortSummary(testClassifier(new J48(), folds, "-C", param), "J48 " + param));
+
+        param = "2";
+        System.out.println(getShortSummary(testSMO(folds, "-C", param), "SMO " + param));
+
+        param = "0.5";
+        System.out.println(getShortSummary(testClassifier(new MultilayerPerceptron(), folds,
+                "-L", param), "MultilayerPerceptron " + param));
+
+        ValidationResult bayesResult = new Validator(dataset, new NaiveBayes(), folds, POSITIVE_VALUE_LABEL).validateClassifier(testRepetitions);
+        System.out.println(getShortSummary(bayesResult, "NaiveBayes"));
+    }
 
         public static void main(String[] args) {
 //        WekaReader reader = new WekaReader(toArffFile("237982L4_1"));
         WekaReader reader = new WekaReader(toArffFile("238454L4 1"));
         int folds = 10;
-        int tests = 2;
+        int tests = 5;
+        int[] foldsArr = {2, 5, 10, 25, 50};
         try {
             Instances dataset = reader.getData();
             ResultsAnalyzer resultsAnalyzer = new ResultsAnalyzer(dataset, tests);
-            resultsAnalyzer.getSummaryForClassifiers(folds);
+            for (int foldsNum : foldsArr) {
+                resultsAnalyzer.testForGivenParams(foldsNum);
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
